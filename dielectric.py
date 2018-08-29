@@ -1,5 +1,5 @@
 import numpy as np
-
+import ancil
 
 
 
@@ -98,7 +98,7 @@ def eps_water_single_debye(temp, freq):
     return epsw_r, epsw_i
 
 
-def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7):
+def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7, logfile=None):
     """
     Relative Dielectric Constant of SOIL
     based on: Ulaby & Long "Microwave Radar and Radiometric Remote Sensing" 2014 (Section 4-8)
@@ -121,7 +121,7 @@ def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7):
     """
     # Non-frozen water in soil
     if temp > 40:
-        raise Exception("Temperature is too hot! Must be less than 40 C")
+        ancil.CodeError("Soil water temperature is too hot! Must be less than 40 C", logfile)
 
     elif temp > 0:
         freq_hz = freq * 1.0e9                                  # convert GHz to Hz
@@ -135,7 +135,7 @@ def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7):
         elif (freq >= 0.3) and (freq <= 1.3):
             sigma_s = 0.0467 + 0.22 * rho_b - 0.411 * sand_frac + 0.661 * clay_frac     # eq. 4.70
         else:
-            raise Exception("Selected frequency is not supported in dielectric constant calculation.")
+            ancil.CodeError("Selected frequency is not supported in dielectric constant calculation.", logfile)
 
         # Dielectric constant of pure water ----------------------------------------------------------------------------
         epsw_inf = 4.9  # eq: 4.15, magnitude of high-frequency eps_w
@@ -159,7 +159,7 @@ def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7):
 
 
     else:   # frozen soil
-        raise Exception("STOP! Frozen soils are not currently supported by model")
+        ancil.CodeError("Frozen soils are not currently supported by model", logfile)
         #eps_r = 3. + mv * (20. + (2./3.) * temp)           # from Kyle's code, dielectric.f, ln 1203-04
         #eps_i = -1. * (1. + temp / 50.) * 2. * mv / 0.15
 

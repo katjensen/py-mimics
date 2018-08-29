@@ -41,7 +41,8 @@ class Ground():
         # lines 108-115 (ground_layer.f)
 
         # Phase difference
-
+        ground_spec_phase_diff = ancil.phase_diff(self.refl_matrix)
+        ground_back_phase_diff = ancil.phase_diff(self.back_matrix)
 
 
 
