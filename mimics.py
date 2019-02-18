@@ -1,15 +1,14 @@
 import ancil
 import ground
 import importlib
+import numpy as np
 import os
 import shutil
 
 
 class ConfigLoader():
-        def __init__(self, logfile, args):
-            self.args = args
-            self.path = os.path.dirname(os.path.realpath(__file__))
-            self.cwd = os.getcwd()
+
+        def __init__(self, logfile, input_csv=None):
             self.logfile = logfile
 
             ###########################################################################################################
@@ -20,7 +19,31 @@ class ConfigLoader():
             except ImportError:
                 ancil.CodeError('"config.py" could not be found in module.', self.logfile)
 
+            params_list = [p.lower() for p in self.default.__dict__ if not p.startswith('__')]
+
             # Import CSV file, if specified --> need to work on this!!
+            if input_csv is not None:
+                csv_values = np.genfromtxt(input_csv, delimiter=',', names=True, dtype=None)
+            else:
+                csv_values = None
+
+            #for att in params_list:
+            #    setattr(self, att, self.assign_attr(att.upper()))
+
+
+
+
+        def assign_attr(self, attr):
+            try:
+                return self.args.__dict__[attr]
+
+            except KeyError:
+                try:
+                    return self.default.__dict__[attr]
+
+                except:
+                    print "No values specified for: ", attr
+                    return None
 
 
 
@@ -49,11 +72,18 @@ class Mimics():
         self.log = open(os.path.join(self.output_dir, 'logfile.txt'), 'a')
 
         # Load configurations
-        self.config = ConfigLoader(logfile=self.log)
+        config = ConfigLoader(logfile=self.log)
+        self.simulations = config.simulations
 
 
     def run(self):
         """ need to work on this --> method for executing mimics """
+
+
+        # Organize set of simulations
+
+
+    def single_simulation(self, sim_num):
 
         # Ground layer
         if self.config.ground_surface == 1:

@@ -2,8 +2,16 @@
 
 #   Options:    (1) Specify a single value,
 #               (2) List/numpy array of values,
-#               (3) Tuple including csv filepath and corresponding column name, e.g. (input.csv, "mv")
-#                   * note: ".csv" extension must be included in filepath
+
+#######################################################################################################################
+### Sensor Parameters
+#######################################################################################################################
+
+# ***** Frequency (GHz) *****
+FREQUENCY = 1.25
+
+# ***** Incidence angle - theta (degrees) *****
+THETA = 30.
 
 #######################################################################################################################
 ### Ground Parameters
