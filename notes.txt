@@ -1,0 +1,5 @@
+Questions:
+
+Physical optics, rough surface scattering:
+    - In original FORTRAN code, it is said that:
+        When abs(EPSR) is "small", RPER1 and RPAR1 coefs are set 0. How is 'small' defined?

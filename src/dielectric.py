@@ -1,5 +1,5 @@
 import numpy as np
-import ancil
+import util
 
 
 
@@ -98,17 +98,22 @@ def eps_water_single_debye(temp, freq):
     return epsw_r, epsw_i
 
 
-def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7, logfile=None):
+def eps_soil(freq_GHz, temp, sand_frac, clay_frac, mv, rho_b=1.7, logfile=None):
     """
     Relative Dielectric Constant of SOIL
     based on: Ulaby & Long "Microwave Radar and Radiometric Remote Sensing" 2014 (Section 4-8)
-    eps_soil = eps_r - j*eps_i
+
+    Implemented from the following paper:
+    M.C. Dobson, F.F. Ulaby, M.T. Hallikainen, M.A. El-Rayes, "Microwave dielectric behavior of wet soil - Part II:
+    Dielectric mixing models," IEEE. Trans. Geosci. Remote Sens., vol. 23, no. 1, pp. 35-46, 1985.
 
     Method computes the real and imaginary parts of the relative dielectric constant of soil at a given
     temperature 0 < t < 40C, frequency, volumetric moisture content, soil bulk density, sand and clay fractions.
 
+    eps_soil = eps_r - j*eps_i
+
     Parameters:
-        freq:       frequency, GHz
+        freq_GHz:   frequency, GHz
         temp:       temperature, degrees C
         sand_frac:  sand fraction, 0 - 1.
         clay_frac:  clay fraction, 0 - 1.
@@ -121,24 +126,24 @@ def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7, logfile=None):
     """
     # Non-frozen water in soil
     if temp > 40:
-        ancil.CodeError("Soil water temperature is too hot! Must be less than 40 C", logfile)
+        util.CodeError("Soil water temperature is too hot! Must be less than 40 C", logfile)
 
     elif temp > 0:
-        freq_hz = freq * 1.0e9                                  # convert GHz to Hz
-        alpha = 0.65                                            # eq: 4.68a
-        beta1 = 1.27 - 0.519 * sand_frac - 0.152 * clay_frac    # eq: 4.68b
-        beta2 = 2.06 - 0.928 * sand_frac - 0.255 * clay_frac    # eq: 4.68c
-        eps_0 = 8.854e-12                                       # permittivity of free space
+        freq_hz = freq_GHz * 1.0e9                              # convert GHz to Hz
+        alpha = 0.65                                            # eq: 4.68a, optimized coefficient
+        beta1 = 1.27 - 0.519 * sand_frac - 0.152 * clay_frac    # eq: 4.68b, optimized coefficient
+        beta2 = 2.06 - 0.928 * sand_frac - 0.255 * clay_frac    # eq: 4.68c, optimized coefficient
 
-        if freq > 1.3:
+        # Effective conductivity, empirically derived -----------------------------------------------------------------
+        if freq_GHz > 1.3:
             sigma_s = -1.645 + 1.939 * rho_b - 2.256 * sand_frac + 1.594 * clay_frac    # eq. 4.68d
-        elif (freq >= 0.3) and (freq <= 1.3):
+        elif (freq_GHz >= 0.3) and (freq_GHz <= 1.3):
             sigma_s = 0.0467 + 0.22 * rho_b - 0.411 * sand_frac + 0.661 * clay_frac     # eq. 4.70
         else:
-            ancil.CodeError("Selected frequency is not supported in dielectric constant calculation.", logfile)
+            util.CodeError("Selected frequency is not supported in dielectric constant calculation.", logfile)
 
         # Dielectric constant of pure water ----------------------------------------------------------------------------
-        epsw_inf = 4.9  # eq: 4.15, magnitude of high-frequency eps_w
+        epsw_inf = 4.9  # eq: 4.15, high-frequency limit of free water dieletric constant
 
         # Static dielectric constant (at f = 0), dimensionless; eq. 4.18, Klein & Swift 1977
         epsw_0 = 88.045 - 0.4147 * temp + 6.295e-4 * np.power(temp, 2) + 1.075e-5 * np.power(temp, 3)
@@ -151,7 +156,7 @@ def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7, logfile=None):
         epsw_r = epsw_inf + (epsw_0 - epsw_inf) / (1. + np.power(2. * np.pi * freq_hz * tau_w, 2))      # eq. 4.67a
         epsw_i = (2. * np.pi * freq_hz * tau_w * (epsw_0 - epsw_inf)) / \
                  (1. + np.power(2. * np.pi * freq_hz * tau_w, 2)) + (2.65 - rho_b) / (2.65 * mv) * \
-                 (sigma_s / (2. * np.pi * eps_0 * freq_hz))                                             # eq. 4.67b
+                 (sigma_s / (2. * np.pi * util.CONSTANTS['eps0'] * freq_hz))                           # eq. 4.67b
 
         # Dielectric constant of soil ----------------------------------------------------------------------------------
         eps_r = np.power((1 + 0.66 * rho_b + np.power(mv, beta1) * np.power(epsw_r, alpha) - mv), (1 / alpha))  # eq. 4.66a
@@ -159,11 +164,12 @@ def eps_soil(freq, temp, sand_frac, clay_frac, mv, rho_b=1.7, logfile=None):
 
 
     else:   # frozen soil
-        ancil.CodeError("Frozen soils are not currently supported by model", logfile)
+        util.CodeError("Frozen soils are not currently supported by model", logfile)
         #eps_r = 3. + mv * (20. + (2./3.) * temp)           # from Kyle's code, dielectric.f, ln 1203-04
         #eps_i = -1. * (1. + temp / 50.) * 2. * mv / 0.15
 
     return eps_r, eps_i
+
 
 
 
